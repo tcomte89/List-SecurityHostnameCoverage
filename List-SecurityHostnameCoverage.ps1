@@ -4,7 +4,7 @@
 # Author: Thomas Comte
 # Purpose: List the security coverages of hostnames where the delivery is in production
 # Date: 08/10/2024
-# Version: 3
+# Version: 4
 #************************************************************************
 
 # Parameters
@@ -38,8 +38,39 @@ if (!(Get-Module DnsClient-PS)) {
 # Retrieve all properties
 $AllProperties = List-AllProperties -EdgeRCFile $EdgeRCFile -Section $Section -AccountSwitchKey $AccountSwitchKey
 
-# Prepare list of property names and versions
-$ListPropertyNamesAndVersions = $AllProperties | Select propertyName, productionVersion | Where-Object { $_.productionVersion -ne $null }
+# Get unique contract IDs without the 'ctr_' prefix
+$ContractIDs = $AllProperties.contractId | Select-Object -Unique | ForEach-Object { $_ -replace '^ctr_', '' }
+
+# List of products to exclude
+$ExcludedProducts = @("M-LC-161134", "M-LC-170724", "M-LC-122937")
+
+# Iterate through each contract ID and filter based on the products
+$FilteredContractIDs = @()
+
+foreach ($ContractID in $ContractIDs) {
+    # Get products for the current contract ID
+    $Products = List-ProductsPerContract -ContractID $ContractID -EdgeRCFile $EdgeRCFile -Section $Section -AccountSwitchKey $AccountSwitchKey
+    
+    # Extract marketingProductIds from the products list
+    $ProductIDs = $Products | Select-Object -ExpandProperty marketingProductId
+
+    # Check if none of the excluded products are present in the product list
+    $HasExcludedProducts = $ExcludedProducts | ForEach-Object { $ProductIDs -contains $_ } | Where-Object { $_ }
+
+    # If no excluded products are found, add the contract ID to the filtered list
+    if (-not $HasExcludedProducts) {
+        $FilteredContractIDs += $ContractID
+    }
+}
+
+# Filter $AllProperties to include only those where the contract ID matches $FilteredContractIDs
+$FilteredProperties = $AllProperties | Where-Object {
+    # Remove 'ctr_' prefix from the contractId and check if it exists in $FilteredContractIDs
+    $FilteredContractIDs -contains ($_.contractId -replace '^ctr_', '')
+}
+
+# Prepare the list of property names and versions for the filtered properties
+$ListPropertyNamesAndVersions = $FilteredProperties | Select-Object propertyName, productionVersion | Where-Object { $_.productionVersion -ne $null }
 
 # Initialize the results list
 $FinalResultList = @()
