@@ -3,18 +3,27 @@
 # Name: List-SecurityHostnameCoverage
 # Author: Thomas Comte
 # Purpose: List the security coverages of hostnames where the delivery is in production
-# Date: 18/09/2024
-# Version: 2
+# Date: 08/10/2024
+# Version: 3
 #************************************************************************
 
 # Parameters
 Param(
-    [Parameter()] [string] $OutputFile = ".\CoveragesStatus.json",
+    [Parameter(Mandatory = $true)] 
+    [string] $OutputFile,
+    
     [ValidateSet("CSV", "JSON", "Both")]
-    [Parameter()] [string] $OutputFormat = "CSV", # Output format: CSV, JSON, Both (default is CSV)    
-    [Parameter()] [string] $EdgeRCFile = "~\.edgerc",
-    [Parameter()] [string] $Section = 'default',
-    [Parameter()] [string] $AccountSwitchKey
+    [Parameter()] 
+    [string] $OutputFormat = "CSV", # Output format: CSV, JSON, Both (default is CSV)
+    
+    [Parameter()] 
+    [string] $EdgeRCFile = "~\.edgerc",
+    
+    [Parameter()] 
+    [string] $Section = 'default',
+    
+    [Parameter()] 
+    [string] $AccountSwitchKey
 )
 
 # Import necessary modules if not already imported
